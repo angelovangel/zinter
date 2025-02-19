@@ -101,16 +101,6 @@
       "Repository": "RSPM",
       "Hash": "14eb0596f987c71535d07c3aff814742"
     },
-    "cpp11": {
-      "Package": "cpp11",
-      "Version": "0.5.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R"
-      ],
-      "Hash": "9df43854f1c84685d095ed6270b52387"
-    },
     "crayon": {
       "Package": "crayon",
       "Version": "1.5.3",
@@ -156,6 +146,16 @@
         "vctrs"
       ],
       "Hash": "fedd9d00c2944ff00a0e2696ccf048ec"
+    },
+    "evaluate": {
+      "Package": "evaluate",
+      "Version": "1.0.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "e9651417729bbe7472e32b5027370e79"
     },
     "fansi": {
       "Package": "fansi",
@@ -221,6 +221,17 @@
       ],
       "Hash": "5899f1eaa825580172bb56c08266f37c"
     },
+    "highr": {
+      "Package": "highr",
+      "Version": "0.11",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "xfun"
+      ],
+      "Hash": "d65ba49117ca223614f71b60d85b8ab7"
+    },
     "htmltools": {
       "Package": "htmltools",
       "Version": "0.5.8.1",
@@ -236,6 +247,21 @@
         "utils"
       ],
       "Hash": "81d371a9cc60640e74e4ab6ac46dcedc"
+    },
+    "htmlwidgets": {
+      "Package": "htmlwidgets",
+      "Version": "1.6.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "grDevices",
+        "htmltools",
+        "jsonlite",
+        "knitr",
+        "rmarkdown",
+        "yaml"
+      ],
+      "Hash": "04291cc45198225444a397606810ac37"
     },
     "httpuv": {
       "Package": "httpuv",
@@ -272,6 +298,22 @@
       ],
       "Hash": "4e993b65c2c3ffbffce7bb3e2c6f832b"
     },
+    "knitr": {
+      "Package": "knitr",
+      "Version": "1.49",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "evaluate",
+        "highr",
+        "methods",
+        "tools",
+        "xfun",
+        "yaml"
+      ],
+      "Hash": "9fcb189926d93c636dea94fbe4f44480"
+    },
     "later": {
       "Package": "later",
       "Version": "1.4.1",
@@ -295,19 +337,6 @@
         "rlang"
       ],
       "Hash": "b8552d117e1b808b09a832f589b79035"
-    },
-    "lubridate": {
-      "Package": "lubridate",
-      "Version": "1.9.4",
-      "Source": "Repository",
-      "Repository": "RSPM",
-      "Requirements": [
-        "R",
-        "generics",
-        "methods",
-        "timechange"
-      ],
-      "Hash": "be38bc740fc51783a78edb5a157e4104"
     },
     "magrittr": {
       "Package": "magrittr",
@@ -416,6 +445,21 @@
       ],
       "Hash": "b8e3d93f508045812f47136c7c44c251"
     },
+    "reactable": {
+      "Package": "reactable",
+      "Version": "0.4.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "digest",
+        "htmltools",
+        "htmlwidgets",
+        "jsonlite",
+        "reactR"
+      ],
+      "Hash": "6069eb2a6597963eae0605c1875ff14c"
+    },
     "renv": {
       "Package": "renv",
       "Version": "1.0.7",
@@ -425,6 +469,20 @@
         "utils"
       ],
       "Hash": "397b7b2a265bc5a7a06852524dabae20"
+    },
+    "rhandsontable": {
+      "Package": "rhandsontable",
+      "Version": "0.3.8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "htmlwidgets",
+        "jsonlite",
+        "magrittr",
+        "methods",
+        "utils"
+      ],
+      "Hash": "cc9b9fd1376181e84c88621711454676"
     },
     "rlang": {
       "Package": "rlang",
@@ -436,6 +494,29 @@
         "utils"
       ],
       "Hash": "724dcc1490cd7071ee75ca2994a5446e"
+    },
+    "rmarkdown": {
+      "Package": "rmarkdown",
+      "Version": "2.29",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "bslib",
+        "evaluate",
+        "fontawesome",
+        "htmltools",
+        "jquerylib",
+        "jsonlite",
+        "knitr",
+        "methods",
+        "tinytex",
+        "tools",
+        "utils",
+        "xfun",
+        "yaml"
+      ],
+      "Hash": "df99277f63d01c34e95e3d2f06a79736"
     },
     "sass": {
       "Package": "sass",
@@ -484,23 +565,16 @@
       ],
       "Hash": "4b4477baa9a939c5577e5ddb4bf01f28"
     },
-    "shinyDatetimePickers": {
-      "Package": "shinyDatetimePickers",
-      "Version": "1.2.0",
-      "Source": "GitHub",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "shinyDatetimePickers",
-      "RemoteUsername": "stla",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "6cc6b73f71912f616f3daf4098beb76d00c53514",
+    "shinyTime": {
+      "Package": "shinyTime",
+      "Version": "1.0.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
       "Requirements": [
         "htmltools",
-        "lubridate",
-        "reactR",
         "shiny"
       ],
-      "Hash": "645f85edbe29a5c84e937d2d55ded7da"
+      "Hash": "836c3464fb0f2ea865ed4c35dcdc1eda"
     },
     "sourcetools": {
       "Package": "sourcetools",
@@ -547,16 +621,15 @@
       ],
       "Hash": "829f27b9c4919c16b593794a6344d6c0"
     },
-    "timechange": {
-      "Package": "timechange",
-      "Version": "0.3.0",
+    "tinytex": {
+      "Package": "tinytex",
+      "Version": "0.54",
       "Source": "Repository",
-      "Repository": "RSPM",
+      "Repository": "CRAN",
       "Requirements": [
-        "R",
-        "cpp11"
+        "xfun"
       ],
-      "Hash": "c5f3c201b931cd6474d17d8700ccb1c8"
+      "Hash": "3ec7e3ddcacc2d34a9046941222bf94d"
     },
     "utf8": {
       "Package": "utf8",
@@ -594,6 +667,19 @@
       ],
       "Hash": "cc2d62c76458d425210d1eb1478b30b4"
     },
+    "xfun": {
+      "Package": "xfun",
+      "Version": "0.50",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "stats",
+        "tools"
+      ],
+      "Hash": "44ab88837d3f8dfc66a837299b887fa6"
+    },
     "xtable": {
       "Package": "xtable",
       "Version": "1.8-4",
@@ -605,6 +691,13 @@
         "utils"
       ],
       "Hash": "b8acdf8af494d9ec19ccb2481a9b11c2"
+    },
+    "yaml": {
+      "Package": "yaml",
+      "Version": "2.3.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "51dab85c6c98e50a18d7551e9d49f76c"
     }
   }
 }
