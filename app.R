@@ -6,6 +6,7 @@ library(digest)
 library(shinyTime)
 library(rhandsontable)
 library(reactable)
+library(htmlwidgets)
 library(knitr)
 
 #make qr and png on the fly and do 64-bit encoding of the image
@@ -18,6 +19,13 @@ make_qr <- function(x) {
  qr_img <- knitr::image_uri(qname)
  unlink(qname)
  qr_img
+}
+
+make_table <- function(rows, cols) {
+  total <- rows * cols
+  codes <- sapply(runif(1:total), digest, algo = 'crc32')
+  m <- matrix(codes, nrow = rows, ncol = cols)
+  as.data.frame(m)
 }
 
 example_table <- tibble(
@@ -76,12 +84,24 @@ ui <- page_navbar(
     layout_columns(cards[[1]], cards[[2]], cards[[3]], col_widths = c(4, 4, 4))
   ),
   nav_panel(
-    title = 'Table with QR codes', 
+    title = 'Table with QR codes',
+    fluidRow(
+      column(width = 2,
+        numericInput('nrows', 'Number of rows', value = 3, max = 12, min = 1)
+      ),
+      column(width = 2,
+        numericInput('ncols', 'Number of columns', value = 3, max = 6, min = 1)
+      ),
+      column(width = 2, actionButton('reset', 'Reset codes', width = '100%', style = 'margin-top:25px')
+      ),
+      column(width = 2, downloadButton('download', 'Download table', style = 'margin-top:25px')
+      )
+    ),
     layout_columns(cards2[[1]], cards2[[2]], col_widths = c(4, 8))
   )
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   output$t <- renderText({
     case_when(
@@ -156,33 +176,65 @@ server <- function(input, output) {
   })
   ### END REACTIVES 
   
+  observeEvent(input$reset, {
+    updateNumericInput(inputId = 'nrows', session = session)
+  })
+  
   output$p <- renderPlot({
     req(input$qrtype)
     plot(qr())
   })
   
+  
   output$hot <- renderRHandsontable({
-    rhandsontable(example_table, rowHeaders = NULL, stretchH = 'all')
+    rhandsontable(make_table(rows = input$nrows, cols = input$ncols), rowHeaders = NULL, stretchH = 'all', colHeaders = NULL)
   })
+  
+  # store the table in reactive so that it can be downloaded as pdf
+  qr_reactive <- reactiveValues(table = NULL, outfile = NULL)
   
   output$rtable <- renderReactable({
     df <- qr_table()
     if (!is.null(df)) {
-      reactable(
+      qr_reactive$table <- reactable(
         df, 
-        columns = list(
-          code = colDef(cell = function(value) {
+        pagination = FALSE,
+        defaultColDef = colDef(
+          cell = function(value) {
             img_src <- make_qr(value)
             image <- img(src = img_src, style = "height: 64px;", alt = value)
             tagList(
-              div(style = "display: inline-block; width: 96px", image),
-              value
+              div(style = "vertical-align: bottom; width: 64px;", image),
+              div(style = "text-align: left; vertical-align: top; font-family: monospace, monospace; font-size: 12px;", value)
             )
-          })
+          }
         )
       )
+      qr_reactive$table
     }
   })
+  
+  # prepare file for download
+  observeEvent(qr_reactive$table, {
+    out <- tempfile(fileext = '.html')
+    htmlwidgets::saveWidget(qr_reactive$table, file = out)
+    if (file.exists(out)) {
+      qr_reactive$outfile <- out
+    } else {
+      qr_reactive$outfile <- NULL
+    }
+  })
+  
+  output$download <- downloadHandler(
+    filename = 'qr_table.html',
+    content = function(file) {
+      file.copy(
+        from = qr_reactive$outfile, 
+        to = file
+      )
+      #htmlwidgets::saveWidget(qr_reactive$table, file, selfcontained = T)
+    }
+  )
  
  
 }
