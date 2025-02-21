@@ -81,7 +81,6 @@ cards2 <- list(
   )
 )
 ui <- page_navbar(
-  useShinyjs(),
   nav_panel(
     title = "One QR code",
     layout_columns(cards[[1]], cards[[2]], cards[[3]], col_widths = c(4, 4, 4))
