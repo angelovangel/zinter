@@ -12,7 +12,8 @@ library(knitr)
 #make qr and png on the fly and do 64-bit encoding of the image
 make_qr <- function(x) {
  q <- qr_code(x)
- qname <- paste0('www/', digest(runif(1), algo = 'crc32'), '.png')
+ #qname <- paste0('www/', digest(runif(1), algo = 'crc32'), '.png')
+ qname <- tempfile(fileext = ".png")
  png(filename = qname)
  plot(q) 
  dev.off()
@@ -72,6 +73,7 @@ cards <- list(
 
 cards2 <- list(
   card(
+    tags$p('QR codes values'),
     rHandsontableOutput('hot')
   ),
   card(
@@ -79,6 +81,7 @@ cards2 <- list(
   )
 )
 ui <- page_navbar(
+  useShinyjs(),
   nav_panel(
     title = "One QR code",
     layout_columns(cards[[1]], cards[[2]], cards[[3]], col_widths = c(4, 4, 4))
@@ -86,6 +89,9 @@ ui <- page_navbar(
   nav_panel(
     title = 'Table with QR codes',
     fluidRow(
+      column(width = 2, 
+        textInput('qr_table_text', 'QR code text', value = "KAUST-BCL")
+      ),
       column(width = 2,
         numericInput('nrows', 'Number of rows', value = 3, max = 12, min = 1)
       ),
@@ -176,22 +182,26 @@ server <- function(input, output, session) {
   })
   ### END REACTIVES 
   
-  observeEvent(input$reset, {
-    updateNumericInput(inputId = 'nrows', session = session)
-  })
-  
   output$p <- renderPlot({
     req(input$qrtype)
     plot(qr())
   })
   
-  
-  output$hot <- renderRHandsontable({
-    rhandsontable(make_table(rows = input$nrows, cols = input$ncols), rowHeaders = NULL, stretchH = 'all', colHeaders = NULL)
-  })
-  
+  ### Table tab
   # store the table in reactive so that it can be downloaded as pdf
   qr_reactive <- reactiveValues(table = NULL, outfile = NULL)
+  
+  output$hot <- renderRHandsontable({
+    # clever way to reset code
+    # see the action button help why it works
+    input$reset # takes dependency on reset
+    rhandsontable(
+      make_table(rows = input$nrows, cols = input$ncols), 
+      rowHeaders = NULL, stretchH = 'all', colHeaders = NULL
+    )
+  })
+  
+  
   
   output$rtable <- renderReactable({
     df <- qr_table()
@@ -204,8 +214,15 @@ server <- function(input, output, session) {
             img_src <- make_qr(value)
             image <- img(src = img_src, style = "height: 64px;", alt = value)
             tagList(
-              div(style = "vertical-align: bottom; width: 64px;", image),
-              div(style = "text-align: left; vertical-align: top; font-family: monospace, monospace; font-size: 12px;", value)
+              div(
+                style = "white-space: pre; text-align: left; font-family: monospace, monospace; font-size: 10px;", 
+                paste0(" ", input$qr_table_text)
+              ),
+              div(style = "display: inline-block; width: 64px;", image),
+              div(
+                style = "white-space: pre; text-align: left; vertical-align: top; font-family: monospace, monospace; font-size: 11px;", 
+                paste0(" ", value)
+              )
             )
           }
         )
@@ -226,7 +243,7 @@ server <- function(input, output, session) {
   })
   
   output$download <- downloadHandler(
-    filename = 'qr_table.html',
+    filename = paste0(Sys.Date(),'-qr-table.html'),
     content = function(file) {
       file.copy(
         from = qr_reactive$outfile, 
