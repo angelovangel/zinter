@@ -98,9 +98,9 @@ ui <- page_navbar(
       column(width = 2,
         numericInput('ncols', 'Number of columns', value = 3, max = 6, min = 1)
       ),
-      column(width = 2, actionButton('reset', 'Reset codes', width = '100%', style = 'margin-top:25px')
+      column(width = 2, actionButton('reset', 'Reset codes', width = '100%', style = 'margin-top:25px', icon = icon('rotate-right'))
       ),
-      column(width = 2, downloadButton('download', 'Download table', style = 'margin-top:25px')
+      column(width = 2, downloadButton('download', 'Download table', style = 'margin-top:25px', icon = icon('chevron-down'))
       )
     ),
     layout_columns(cards2[[1]], cards2[[2]], col_widths = c(4, 8))
