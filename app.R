@@ -4,10 +4,16 @@ library(bslib)
 library(qrcode)
 library(digest)
 library(shinyTime)
+library(shinyvalidate)
 library(rhandsontable)
 library(reactable)
 library(htmlwidgets)
 library(knitr)
+library(svglite)
+library(tidygeocoder)
+library(leaflet)
+
+IBAN_REGEX <-  "[a-zA-Z]{2}\\s*[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}"
 
 #make qr and png on the fly and do 64-bit encoding of the image
 make_qr <- function(x) {
@@ -51,8 +57,19 @@ cards <- list(
     ),
     conditionalPanel(
       condition = "input.qrtype == 'location'",
-      numericInput('loc_lat', 'Latidute', value = 40.730610),
-      numericInput('loc_lon', 'Longitude', value = -73.935242)
+      radioButtons(
+        'loc_search', 
+        label = 'Choose location entry mode', 
+        choices = c('Enter lat/lon' = 'latlon', 'Address search' = 'address'), 
+        inline = T),
+      conditionalPanel(condition = "input.loc_search == 'latlon'",
+        numericInput('loc_lat', 'Latidute', value = 40.730610),
+        numericInput('loc_lon', 'Longitude', value = -73.935242)
+      ),
+      conditionalPanel(condition = "input.loc_search == 'address'",
+        textInput('address_search', 'Enter address', placeholder = 'Street, city, country ...', width = "100%"),
+        actionButton('go_search', 'Search address', icon = icon('map-pin'))
+      )
     ),
     conditionalPanel(
       condition = "input.qrtype == 'sepa'",
@@ -60,14 +77,23 @@ cards <- list(
       textInput('sepa_benef', 'Beneficiary'),
       numericInput('sepa_amount', 'Amount', value = 1),
       textInput('sepa_ref', 'Transfer reference')
+    ),
+    conditionalPanel(
+      condition = "input.qrtype == 'vcard'",
+      textInput('vcard_firstname', 'First name'),
+      textInput('vcard_familyname', 'Family name'),
+      textInput('vcard_email', 'email')
     )
   ),
   card(
     tags$b('QR code content:'),
-    htmlOutput('t')
+    conditionalPanel(condition = "input.qrtype == 'location'", leafletOutput('mymap1')),
+    uiOutput('t')
   ),
   card(
-    plotOutput("p")
+    plotOutput("p"),
+    radioButtons('format', label = '', choices = c('png', 'svg'), selected = 'png', inline = T),
+    uiOutput('download_qr')
   )
 )
 
@@ -97,6 +123,9 @@ ui <- page_navbar(
       column(width = 2,
         numericInput('ncols', 'Number of columns', value = 3, max = 6, min = 1)
       ),
+      column(width = 2, 
+        selectizeInput('qr_size', 'QR size', choices = c(32, 48, 64, 72, 96, 124), selected = 64)
+      ),
       column(width = 2, actionButton('reset', 'Reset codes', width = '100%', style = 'margin-top:25px', icon = icon('rotate-right'))
       ),
       column(width = 2, downloadButton('download', 'Download table', style = 'margin-top:25px', icon = icon('chevron-down'))
@@ -108,30 +137,87 @@ ui <- page_navbar(
 
 server <- function(input, output, session) {
   
-  output$t <- renderText({
-    case_when(
-      input$qrtype == 'code' ~ input$code_text,
-      input$qrtype == 'event' ~ paste0(
+  iv <- InputValidator$new()
+  iv$add_rule('vcard_email', sv_optional())
+  iv$add_rule('vcard_email', sv_email())
+  iv$add_rule('loc_lat', sv_between(-90, 90))
+  iv$add_rule('loc_lon', sv_between(-180, 180))
+  
+  #iv$add_rule('sepa_iban', sv_regex(IBAN_REGEX, message = "Not a valid IBAN"))
+  iv$enable()
+  
+  # 'code', 'event', 'location', 'sepa', 'vcard', 'wifi'
+  output$mymap1 <- renderLeaflet({
+    req(iv$is_valid())
+    
+    leaflet() %>% 
+      addTiles() %>%
+      addPopups(lng = input$loc_lon, lat = input$loc_lat, popup = HTML("Selected location:<br>Lat: ", input$loc_lat, "<br>Lon: ",input$loc_lon)) %>%
+      addCircleMarkers(
+      lng=input$loc_lon, 
+      lat=input$loc_lat, 
+      label = "Selected location", 
+      #icon = awesomeIcons('location-crosshairs', library = 'fa') 
+      stroke = FALSE, 
+      radius = 6, fillOpacity = 0.8
+      )
+  })
+  
+  output$t <- renderUI({
+    req(iv$is_valid())
+    
+    if(input$qrtype == 'code') {
+      tags$a(input$code_text)
+    } else if(input$qrtype == 'event') {
+      HTML(
         'Event title: ', input$event_title, '<br>',
         'Event start: ', input$event_start, '<br>', 
-        'Event end: ', input$event_end),
-      input$qrtype == 'location' ~ paste0(
-        'Latidite/Longitude: <code>', 
-        input$loc_lat, '<br>',input$loc_lon
-      ),
-      input$qrtype == 'sepa' ~ paste0(
-        'Iban: ', input$sepa_iban, '<br>',
-        'Beneficiary: ', input$sepa_benef, '<br>',
-        'Amount: ', input$sepa_amount, ' EUR<br>',
-        'Reference: ', input$sepa_ref
-      ),
-      input$qrtype == 'vcard' ~ paste0(
-        'vcard'
-      ),
-      input$qrtype == 'wifi' ~ paste0(
-        'wifi'
+        'Event end: ', input$event_end
       )
-    )
+    } else if(input$qrtype == 'location') {
+      tagList(
+        tags$code("Lat: ", input$loc_lat, "Lon: ", input$loc_lon)
+      )
+    }
+  })
+    
+  #     input$qrtype == 'event' ~ htmlOutput(
+  #       'Event title: ', input$event_title, '<br>',
+  #       'Event start: ', input$event_start, '<br>', 
+  #       'Event end: ', input$event_end),
+  #     input$qrtype == 'location' ~ paste0(
+  #       'Latidite/Longitude: <code>', 
+  #       input$loc_lat, '<br>',input$loc_lon
+  #     ),
+  #     input$qrtype == 'sepa' ~ paste0(
+  #       'Iban: ', input$sepa_iban, '<br>',
+  #       'Beneficiary: ', input$sepa_benef, '<br>',
+  #       'Amount: ', input$sepa_amount, ' EUR<br>',
+  #       'Reference: ', input$sepa_ref
+  #     ),
+  #     input$qrtype == 'vcard' ~ paste0(
+  #       'vcard'
+  #     ),
+  #     input$qrtype == 'wifi' ~ paste0(
+  #       'wifi'
+  #     )
+  #   )
+  # })
+  observe({
+    #proxy <- leafletProxy('mymap1')
+    req(input$mymap1_click)
+    
+    updateNumericInput('loc_lat', value = input$mymap1_click$lat, session = session)
+    updateNumericInput('loc_lon', value = input$mymap1_click$lng, session = session)
+  })
+
+  
+  observeEvent(input$go_search, {
+    req(input$address_search)
+    #req(iv$is_valid())
+    hit <- tidygeocoder::geo(address = input$address_search)
+    updateNumericInput('loc_lat', value = hit$lat, session = session)
+    updateNumericInput('loc_lon', value = hit$long, session = session)
   })
   
   ### START REACTIVES 
@@ -183,7 +269,16 @@ server <- function(input, output, session) {
   
   output$p <- renderPlot({
     req(input$qrtype)
+    req(iv$is_valid())
     plot(qr())
+  })
+  
+  output$download_qr <- renderUI({
+    if (input$format == 'png') {
+      downloadButton('download1', 'Download QR as PNG')
+    } else {
+      downloadButton('download1', 'Download QR as SVG')
+    }
   })
   
   ### Table tab
@@ -211,7 +306,12 @@ server <- function(input, output, session) {
         defaultColDef = colDef(
           cell = function(value) {
             img_src <- make_qr(value)
-            image <- img(src = img_src, style = "height: 64px;", alt = value)
+            image <- img(
+              src = img_src, 
+              # qr size with input
+              style = paste0("height: ", input$qr_size, "px;"), 
+              alt = value
+            )
             tagList(
               div(
                 style = "white-space: pre; text-align: left; font-family: monospace, monospace; font-size: 10px;", 
@@ -249,6 +349,21 @@ server <- function(input, output, session) {
         to = file
       )
       #htmlwidgets::saveWidget(qr_reactive$table, file, selfcontained = T)
+    }
+  )
+  
+  output$download1 <- downloadHandler(
+    filename = function() {
+      paste0(Sys.Date(), 'qr-code.', input$format)
+    },
+    content = function(file) {
+      if(input$format == 'png') {
+        png(filename = file)
+      } else {
+        svglite(filename = file)  
+      }
+      plot(qr())
+      dev.off()
     }
   )
  
