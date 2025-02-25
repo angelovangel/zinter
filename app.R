@@ -13,6 +13,7 @@ library(svglite)
 library(tidygeocoder)
 library(leaflet)
 
+
 IBAN_REGEX <-  "[a-zA-Z]{2}\\s*[0-9]{2}[a-zA-Z0-9]{4}[0-9]{7}([a-zA-Z0-9]?){0,16}"
 
 #make qr and png on the fly and do 64-bit encoding of the image
@@ -107,6 +108,7 @@ cards2 <- list(
   )
 )
 ui <- page_navbar(
+  
   nav_panel(
     title = "One QR code",
     layout_columns(cards[[1]], cards[[2]], cards[[3]], col_widths = c(4, 4, 4))
@@ -288,6 +290,8 @@ server <- function(input, output, session) {
   output$hot <- renderRHandsontable({
     # clever way to reset code
     # see the action button help why it works
+    req(input$nrows)
+    req(input$ncols)
     input$reset # takes dependency on reset
     rhandsontable(
       make_table(rows = input$nrows, cols = input$ncols), 
@@ -300,10 +304,12 @@ server <- function(input, output, session) {
   output$rtable <- renderReactable({
     df <- qr_table()
     if (!is.null(df)) {
-      qr_reactive$table <- reactable(
+      qr_reactive$table <- reactable(borderless = T,
         df, 
         pagination = FALSE,
         defaultColDef = colDef(
+          headerStyle = "display: none;", 
+          align = 'center',
           cell = function(value) {
             img_src <- make_qr(value)
             image <- img(
@@ -314,12 +320,12 @@ server <- function(input, output, session) {
             )
             tagList(
               div(
-                style = "white-space: pre; text-align: left; font-family: monospace, monospace; font-size: 10px;", 
+                style = "white-space: pre; font-family: monospace, monospace; font-size: 10px;", 
                 paste0(" ", input$qr_table_text)
               ),
               div(style = "display: inline-block; width: 64px;", image),
               div(
-                style = "white-space: pre; text-align: left; vertical-align: top; font-family: monospace, monospace; font-size: 11px;", 
+                style = "white-space: pre; vertical-align: top; font-family: monospace, monospace; font-size: 11px;", 
                 paste0(" ", value)
               )
             )
