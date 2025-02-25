@@ -111,7 +111,7 @@ ui <- page_navbar(
   
   nav_panel(
     title = "One QR code",
-    layout_columns(cards[[1]], cards[[2]], cards[[3]], col_widths = c(4, 4, 4))
+    layout_columns(cards[[1]], cards[[2]], cards[[3]], col_widths = c(3, 6, 3))
   ),
   nav_panel(
     title = 'Table with QR codes',
@@ -154,15 +154,20 @@ server <- function(input, output, session) {
     
     leaflet() %>% 
       addTiles() %>%
-      addPopups(lng = input$loc_lon, lat = input$loc_lat, popup = HTML("Selected location:<br>Lat: ", input$loc_lat, "<br>Lon: ",input$loc_lon)) %>%
+      addScaleBar(position = 'topright') %>%
+      addPopups(
+        lng = isolate(input$loc_lon), 
+        lat = isolate(input$loc_lat), 
+        popup = HTML("Selected location:<br>Lat: ", input$loc_lat, "<br>Lon: ",input$loc_lon)) %>%
       addCircleMarkers(
-      lng=input$loc_lon, 
-      lat=input$loc_lat, 
+      lng=isolate(input$loc_lon), 
+      lat=isolate(input$loc_lat), 
       label = "Selected location", 
       #icon = awesomeIcons('location-crosshairs', library = 'fa') 
       stroke = FALSE, 
       radius = 6, fillOpacity = 0.8
-      )
+      ) %>%
+      mapOptions(zoomToLimits = 'first')
   })
   
   output$t <- renderUI({
@@ -205,15 +210,19 @@ server <- function(input, output, session) {
   #     )
   #   )
   # })
-  observe({
-    #proxy <- leafletProxy('mymap1')
+  observeEvent(input$mymap1_click, {
+    proxy <- leafletProxy('mymap1', deferUntilFlush = F)
     req(input$mymap1_click)
     
     updateNumericInput('loc_lat', value = input$mymap1_click$lat, session = session)
     updateNumericInput('loc_lon', value = input$mymap1_click$lng, session = session)
+    proxy %>% 
+      setView(
+        lng = input$mymap1_click$lng, 
+        lat = input$mymap1_click$lat, 
+        zoom = input$mymap1_zoom)
   })
-
-  
+ 
   observeEvent(input$go_search, {
     req(input$address_search)
     #req(iv$is_valid())
@@ -304,11 +313,14 @@ server <- function(input, output, session) {
   output$rtable <- renderReactable({
     df <- qr_table()
     if (!is.null(df)) {
-      qr_reactive$table <- reactable(borderless = T,
+      qr_reactive$table <- reactable(
         df, 
-        pagination = FALSE,
+        pagination = FALSE, 
+        
+        #borderless = T,
         defaultColDef = colDef(
           headerStyle = "display: none;", 
+          style = "margin: 0;",
           align = 'center',
           cell = function(value) {
             img_src <- make_qr(value)
